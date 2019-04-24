@@ -18,6 +18,20 @@ option(USE_EXTERNAL_GLES3 "Experimental: Compile Filament against OpenGL ES 3" O
 
 option(GENERATE_JS_DOCS "Build WebGL documentation and tutorials" OFF)
 
+option(FILAMENT_BUILD_SAMPLES "Build filament samples" ON)
+
+option(FILAMENT_BUILD_TESTING "Build filament tests" ON)
+
+option(FILAMENT_BUILD_BENCHMARKS "Build filament benchmarks" ON)
+
+option(FILAMENT_USE_EXTERNAL_ASSIMP "Use external assimp library" OFF)
+
+option(FILAMENT_USE_EXTERNAL_SDL2 "Use external SDL2 library" OFF)
+
+option(FILAMENT_USE_EXTERNAL_PNG "Use external PNG library" OFF)
+
+option(FILAMENT_USE_EXTERNAL_ZLIB "Use external ZLIB library" OFF)
+
 # ==================================================================================================
 # OS specific
 # ==================================================================================================
@@ -336,7 +350,9 @@ endfunction()
 # ==================================================================================================
 
 # Common to all platforms
-add_subdirectory(${EXTERNAL}/libgtest/tnt)
+if (FILAMENT_BUILD_TESTING)
+    add_subdirectory(${EXTERNAL}/libgtest/tnt)
+endif()
 add_subdirectory(${LIBRARIES}/filabridge)
 add_subdirectory(${LIBRARIES}/filaflat)
 add_subdirectory(${LIBRARIES}/filameshio)
@@ -350,7 +366,11 @@ add_subdirectory(${FILAMENT}/filament)
 add_subdirectory(${FILAMENT}/shaders)
 add_subdirectory(${EXTERNAL}/robin-map/tnt)
 add_subdirectory(${EXTERNAL}/smol-v/tnt)
-add_subdirectory(${EXTERNAL}/benchmark/tnt)
+
+if (FILAMENT_BUILD_BENCHMARKS)
+    add_subdirectory(${EXTERNAL}/benchmark/tnt)
+endif()
+
 add_subdirectory(${EXTERNAL}/meshoptimizer)
 add_subdirectory(${EXTERNAL}/cgltf/tnt)
 add_subdirectory(${EXTERNAL}/stb/tnt)
@@ -364,20 +384,14 @@ if (FILAMENT_BUILD_FILAMAT)
     add_subdirectory(${LIBRARIES}/filamat)
 endif()
 
-if (FILAMENT_SUPPORTS_VULKAN)
-    add_subdirectory(${LIBRARIES}/bluevk)
-    add_subdirectory(${EXTERNAL}/vkmemalloc/tnt)
-endif()
-
-if (APPLE)
-    add_subdirectory(${EXTERNAL}/moltenvk/tnt)
-endif()
-
 set (FILAMENT_SAMPLES_BINARY_DIR ${PROJECT_BINARY_DIR}/samples)
 
 if (WEBGL)
     add_subdirectory(web/filament-js)
-    add_subdirectory(web/samples)
+
+    if (FILAMENT_BUILD_SAMPLES)
+        add_subdirectory(web/samples)
+    endif()
 
     if (GENERATE_JS_DOCS)
         add_subdirectory(web/docs)
@@ -393,16 +407,44 @@ if (NOT ANDROID AND NOT WEBGL AND NOT IOS)
 
     add_subdirectory(${FILAMENT}/java/filamat)
     add_subdirectory(${FILAMENT}/java/filament)
-    add_subdirectory(${FILAMENT}/samples)
 
     add_subdirectory(${EXTERNAL}/astcenc/tnt)
     add_subdirectory(${EXTERNAL}/etc2comp)
     add_subdirectory(${EXTERNAL}/getopt)
     add_subdirectory(${EXTERNAL}/imgui/tnt)
-    add_subdirectory(${EXTERNAL}/libassimp/tnt)
-    add_subdirectory(${EXTERNAL}/libpng/tnt)
-    add_subdirectory(${EXTERNAL}/libsdl2/tnt)
-    add_subdirectory(${EXTERNAL}/libz/tnt)
+
+    if (FILAMENT_USE_EXTERNAL_ASSIMP)
+        find_package(assimp 5.0)
+    else()
+        add_subdirectory(${EXTERNAL}/libassimp/tnt)
+    endif()
+
+    if (FILAMENT_USE_EXTERNAL_PNG)
+        find_package(PNG REQUIRED)
+    else()
+        add_subdirectory(${EXTERNAL}/libpng/tnt)
+    endif()
+
+    if (FILAMENT_USE_EXTERNAL_SDL2)
+        find_package(SDL2 REQUIRED)
+        set(SDL2_LIBRARY SDL2::SDL2)
+        set(SDL2MAIN_LIBRARY SDL2::SDL2main)
+    else()
+        add_subdirectory(${EXTERNAL}/libsdl2/tnt)
+        set(SDL2_LIBRARY sdl2)
+        set(SDL2MAIN_LIBRARY sdl2main)
+    endif()
+
+    if (FILAMENT_USE_EXTERNAL_ZLIB)
+        find_package(ZLIB REQUIRED)
+    else()
+        add_subdirectory(${EXTERNAL}/libz/tnt)
+    endif()
+
+    if (FILAMENT_BUILD_SAMPLES)
+        add_subdirectory(${FILAMENT}/samples)
+    endif()
+
     add_subdirectory(${EXTERNAL}/skylight/tnt)
     add_subdirectory(${EXTERNAL}/tinyexr/tnt)
 
@@ -417,6 +459,15 @@ if (NOT ANDROID AND NOT WEBGL AND NOT IOS)
     add_subdirectory(${TOOLS}/roughness-prefilter)
     add_subdirectory(${TOOLS}/skygen)
     add_subdirectory(${TOOLS}/specular-color)
+endif()
+
+if (FILAMENT_SUPPORTS_VULKAN)
+    add_subdirectory(${LIBRARIES}/bluevk)
+    add_subdirectory(${EXTERNAL}/vkmemalloc/tnt)
+endif()
+
+if (APPLE)
+    add_subdirectory(${EXTERNAL}/moltenvk/tnt)
 endif()
 
 # Generate exported executables for cross-compiled builds (Android, WebGL, and iOS)

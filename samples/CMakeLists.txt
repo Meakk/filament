@@ -173,9 +173,9 @@ add_library(gltf-resources ${DUMMY_SRC} ${RESGEN_SOURCE})
 # Common library
 # ==================================================================================================
 
-set(APP_LIBS filament sdl2 stb math filamat utils getopt imgui filagui image common-resources)
+set(APP_LIBS filament ${SDL2_LIBRARY} stb math filamat utils getopt imgui filagui image common-resources)
 if (WIN32)
-    list(APPEND APP_LIBS sdl2main)
+    list(APPEND APP_LIBS ${SDL2MAIN_LIBRARY})
 endif()
 
 set(APP_SRCS

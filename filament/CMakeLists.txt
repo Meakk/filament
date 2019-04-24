@@ -337,5 +337,11 @@ install(FILES "README.md" DESTINATION .)
 # Sub-projects
 # ==================================================================================================
 add_subdirectory(backend)
-add_subdirectory(test)
-add_subdirectory(benchmark)
+
+if (FILAMENT_BUILD_TESTING)
+    add_subdirectory(test)
+endif()
+
+if (FILAMENT_BUILD_BENCHMARKS)
+    add_subdirectory(benchmark)
+endif()

@@ -138,13 +138,15 @@ install(DIRECTORY ${PUBLIC_HDR_DIR}/filamat DESTINATION include)
 # ==================================================================================================
 # Tests
 # ==================================================================================================
-project(test_filamat)
-set(TARGET test_filamat)
-set(SRCS
-        tests/test_filamat.cpp)
+if (FILAMENT_BUILD_TESTING)
+    project(test_filamat)
+    set(TARGET test_filamat)
+    set(SRCS
+            tests/test_filamat.cpp)
 
-add_executable(${TARGET} ${SRCS})
+    add_executable(${TARGET} ${SRCS})
 
-target_include_directories(${TARGET} PRIVATE src)
+    target_include_directories(${TARGET} PRIVATE src)
 
-target_link_libraries(${TARGET} filamat gtest)
+    target_link_libraries(${TARGET} filamat gtest)
+endif()

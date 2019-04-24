@@ -95,50 +95,53 @@ install(FILES ${DIST_HDRS} DESTINATION include/${TARGET})
 # Test executables
 # ==================================================================================================
 
-set(TEST_SRCS
-        test/test_algorithm.cpp
-        test/test_Allocators.cpp
-        test/test_bitset.cpp
-        test/test_CountDownLatch.cpp
-        test/test_CString.cpp
-        test/test_CyclicBarrier.cpp
-        test/test_Entity.cpp
-        test/test_JobSystem.cpp
-        test/test_StructureOfArrays.cpp
-        test/test_utils_main.cpp
-        test/test_Zip2Iterator.cpp
-        test/test_BinaryTreeArray.cpp
-)
+if (FILAMENT_BUILD_TESTING)
+    set(TEST_SRCS
+            test/test_algorithm.cpp
+            test/test_Allocators.cpp
+            test/test_bitset.cpp
+            test/test_CountDownLatch.cpp
+            test/test_CString.cpp
+            test/test_CyclicBarrier.cpp
+            test/test_Entity.cpp
+            test/test_JobSystem.cpp
+            test/test_StructureOfArrays.cpp
+            test/test_utils_main.cpp
+            test/test_Zip2Iterator.cpp
+            test/test_BinaryTreeArray.cpp
+    )
 
-# The Path tests are platform-specific
-if (NOT WEBGL)
-    if (WIN32)
-        list(APPEND TEST_SRCS test/test_WinPath.cpp)
-    else()
-        list(APPEND TEST_SRCS test/test_Path.cpp)
+    # The Path tests are platform-specific
+    if (NOT WEBGL)
+        if (WIN32)
+            list(APPEND TEST_SRCS test/test_WinPath.cpp)
+        else()
+            list(APPEND TEST_SRCS test/test_Path.cpp)
+        endif()
     endif()
+
+    add_executable(test_${TARGET} ${TEST_SRCS})
+
+    target_link_libraries(test_${TARGET} PRIVATE gtest utils tsl math)
 endif()
-
-add_executable(test_${TARGET} ${TEST_SRCS})
-
-target_link_libraries(test_${TARGET} PRIVATE gtest utils tsl math)
 
 # ==================================================================================================
 # Benchmarks
 # ==================================================================================================
 
-add_library(benchmark_${TARGET}_callee SHARED benchmark/benchmark_callee.cpp)
+if (FILAMENT_BUILD_BENCHMARKS)
+    add_library(benchmark_${TARGET}_callee SHARED benchmark/benchmark_callee.cpp)
+
+    set(BENCHMARK_SRCS
+            benchmark/benchmark_allocators.cpp
+            benchmark/benchmark_binary_search.cpp
+            benchmark/benchmark_calls.cpp
+            benchmark/benchmark_JobSystem.cpp
+            benchmark/benchmark_mutex.cpp
+            benchmark/benchmark_memcpy.cpp)
 
 
-set(BENCHMARK_SRCS
-        benchmark/benchmark_allocators.cpp
-        benchmark/benchmark_binary_search.cpp
-        benchmark/benchmark_calls.cpp
-        benchmark/benchmark_JobSystem.cpp
-        benchmark/benchmark_mutex.cpp
-        benchmark/benchmark_memcpy.cpp)
+    add_executable(benchmark_${TARGET} ${BENCHMARK_SRCS})
 
-
-add_executable(benchmark_${TARGET} ${BENCHMARK_SRCS})
-
-target_link_libraries(benchmark_${TARGET} PRIVATE benchmark_main utils benchmark_${TARGET}_callee)
+    target_link_libraries(benchmark_${TARGET} PRIVATE benchmark_main utils benchmark_${TARGET}_callee)
+endif()

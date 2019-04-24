@@ -79,13 +79,15 @@ install(TARGETS ${TARGET} RUNTIME DESTINATION bin)
 # ==================================================================================================
 # Tests
 # ==================================================================================================
-project(test_matc)
-set(TARGET test_matc)
-set(SRCS
+if (FILAMENT_BUILD_TESTING)
+    project(test_matc)
+    set(TARGET test_matc)
+    set(SRCS
     tests/test_matc.cpp
     tests/MockConfig.cpp
     tests/MockConfig.h)
 
-add_executable(${TARGET} ${SRCS})
+    add_executable(${TARGET} ${SRCS})
 
-target_link_libraries(${TARGET} matlang gtest)
+    target_link_libraries(${TARGET} matlang gtest)
+endif()
