@@ -361,7 +361,8 @@ private:
     inline void setClearDepth(GLfloat depth) noexcept;
     inline void setClearStencil(GLint stencil) noexcept;
 
-    void resolve(GLRenderTarget const* rt, backend::TargetBufferFlags discardFlags) noexcept;
+    backend::TargetBufferFlags resolve(GLRenderTarget const* rt,
+            backend::TargetBufferFlags discardFlags) noexcept;
 
     GLuint getSamplerSlow(backend::SamplerParams sp) const noexcept;
 

@@ -2146,8 +2146,8 @@ void OpenGLDriver::beginRenderPass(Handle<HwRenderTarget> rth,
 
     mRenderPassTarget = rth;
     mRenderPassParams = params;
-    const TargetBufferFlags clearFlags = (TargetBufferFlags) params.flags.clear;
-    const TargetBufferFlags discardFlags = (TargetBufferFlags) params.flags.discardStart;
+    TargetBufferFlags clearFlags = (TargetBufferFlags)params.flags.clear;
+    const TargetBufferFlags discardFlags = (TargetBufferFlags)params.flags.discardStart;
 
     GLRenderTarget* rt = handle_cast<GLRenderTarget*>(rth);
     if (UTILS_UNLIKELY(state.draw_fbo != rt->gl.fbo)) {
@@ -2164,6 +2164,20 @@ void OpenGLDriver::beginRenderPass(Handle<HwRenderTarget> rth,
                 }
                 CHECK_GL_ERROR(utils::slog.e)
             }
+        }
+    }
+
+    if (rt->gl.fbo_read != rt->gl.fbo) {
+        // this is backward resolve!
+        // we have a magic multi sampled texture
+        const TargetBufferFlags resolve = TargetBufferFlags(rt->gl.resolve & ~(discardFlags|clearFlags));
+        GLbitfield mask = getDiscardBits(TargetBufferFlags(resolve));
+        if (UTILS_UNLIKELY(mask)) {
+            bindFramebuffer(GL_DRAW_FRAMEBUFFER, rt->gl.fbo);
+            bindFramebuffer(GL_READ_FRAMEBUFFER, rt->gl.fbo_read);
+            disable(GL_SCISSOR_TEST);
+            glBlitFramebuffer(0, 0, rt->width, rt->height, 0, 0, rt->width, rt->height, mask, GL_NEAREST);
+            CHECK_GL_ERROR(utils::slog.e)
         }
     }
 
@@ -2210,8 +2224,8 @@ void OpenGLDriver::endRenderPass(int) {
 
     GLRenderTarget const* const rt = handle_cast<GLRenderTarget*>(mRenderPassTarget);
 
-    const TargetBufferFlags discardFlags = TargetBufferFlags(mRenderPassParams.flags.discardEnd);
-    resolve(rt, discardFlags);
+    const TargetBufferFlags UTILS_UNUSED discardFlags = resolve(rt,
+            TargetBufferFlags(mRenderPassParams.flags.discardEnd));
 
     // glInvalidateFramebuffer appeared on GLES 3.0 and GL4.3, for simplicity we just
     // ignore it on GL (rather than having to do a runtime check).
@@ -2239,7 +2253,7 @@ void OpenGLDriver::endRenderPass(int) {
     mRenderPassTarget.clear();
 }
 
-void OpenGLDriver::resolve(GLRenderTarget const* rt, TargetBufferFlags discardFlags) noexcept {
+TargetBufferFlags OpenGLDriver::resolve(GLRenderTarget const* rt, TargetBufferFlags discardFlags) noexcept {
     const TargetBufferFlags resolve = TargetBufferFlags(rt->gl.resolve & ~discardFlags);
     GLbitfield mask = getDiscardBits(resolve);
     if (UTILS_UNLIKELY(mask)) {
@@ -2249,6 +2263,9 @@ void OpenGLDriver::resolve(GLRenderTarget const* rt, TargetBufferFlags discardFl
         glBlitFramebuffer(0, 0, rt->width, rt->height, 0, 0, rt->width, rt->height, mask, GL_NEAREST);
         CHECK_GL_ERROR(utils::slog.e)
     }
+    // buffers that were resolved are discarded -- this emulates the behaviour of
+    // EXT_multisampled_render_to_texture.
+    return TargetBufferFlags(resolve | discardFlags);
 }
 
 void OpenGLDriver::discardSubRenderTargetBuffers(Handle<HwRenderTarget> rth,
